@@ -1,0 +1,62 @@
+================================================================================
+          FUEL COSTS PER GENERATORTYPE - CASE_2050_MD
+================================================================================
+
+Kilde: generator_BL_v1.csv
+Alle verdier i €/MWh elektrisk produksjon
+
+================================================================================
+TABELL: FUEL COSTS
+================================================================================
+
+Generatortype      Fuelcost (€/MWh)    Antall generatorer
+--------------------------------------------------------------------------------
+hydro                       0.0                 49
+hydro (med vannverdi)       1.0                  6
+ror (elvekraft)             0.0                 52
+wind_on                     0.015               65
+wind_off                    0.015               18
+solar                       0.01                57
+nuclear                     9.37                10
+biomass                    15.0                 42
+biomass (høy)              32.0                  1
+fossil_other              110.19                45
+fossil_gas                137.52                39
+--------------------------------------------------------------------------------
+
+================================================================================
+ANALYSE AV GASSKRAFT FUELCOST (137.52 €/MWh)
+================================================================================
+
+Sannsynlig beregning for 2050:
+
+1. Gasspris (termisk):          ~55 €/MWh
+2. CCGT virkningsgrad:          ~55%
+3. Brenselkostnad elektrisk:    55/0.55 = 100 €/MWh
+
+4. CO2-pris (ETS 2050):         ~150 €/tCO2
+5. CO2-utslipp CCGT:            ~0.25 tCO2/MWhel
+6. CO2-kostnad:                 150 × 0.25 = 37.5 €/MWh
+
+7. Total:                       100 + 37.5 ≈ 137.5 €/MWh
+
+Konklusjon: CO2-prisen er INKLUDERT i fuelcost for fossil_gas
+
+================================================================================
+SAMMENLIGNING: MARGINALKOSTNADER
+================================================================================
+
+Generatortype      Fuelcost    Differanse vs. gass
+--------------------------------------------------------------------------------
+fossil_gas          137.52           0 €/MWh (referanse)
+fossil_other        110.19         -27 €/MWh
+biomass              15.0         -123 €/MWh
+nuclear               9.37        -128 €/MWh
+hydro                 0.0         -138 €/MWh
+wind/solar           ~0.01        -138 €/MWh
+--------------------------------------------------------------------------------
+
+SMR har 128 €/MWh lavere marginalkostnad enn gasskraft.
+Dette forklarer hvorfor SMR reduserer systemprisene betydelig.
+
+================================================================================

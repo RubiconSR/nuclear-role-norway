@@ -1,0 +1,11 @@
+type,n_units,pmax_GW,fuelcost_EUR_MWh,inflow_fac,storage_TWh
+hydro,20,33.49,0.00,0.68,87.4
+ror,20,8.71,0.00,0.68,
+wind_on,20,7.90,0.015,0.85,
+wind_off,5,6.20,0.015,0.50,
+solar,12,11.70,0.01,0.80,
+biomass,20,0.10,15.00,1.00,
+fossil_gas,15,0.20,137.52,1.00,
+nuclear_SMR1,5,1.50,9.37,1.00,
+nuclear_SMR3,15,4.50,9.37,1.00,
+nuclear_SMR6,30,9.00,9.37,1.00,
