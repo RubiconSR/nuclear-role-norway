@@ -6,3 +6,5 @@ venv/
 *.log
 .idea/
 .vscode/
+*.db
+timeseries_profiles.csv
