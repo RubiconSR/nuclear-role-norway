@@ -15,6 +15,14 @@ This analysis is built on [PowerGAMA](https://github.com/powergama/powergama) (P
 - **Developer**: Harald G Svendsen, SINTEF Energy Research
 - **Documentation**: [PowerGAMA Documentation](https://powergama.readthedocs.io/)
 
+### NordicNuclearAnalysis
+The analysis framework, scenario configurations, and input data are based on [NordicNuclearAnalysis](https://github.com/Zynecut/NordicNuclearAnalysis), which provides:
+
+- Scenario setup scripts (`CASE_2035/`)
+- Analysis functions (`functions/`)
+- Data processing utilities (`scripts/`)
+- Nordic power system baseline data
+
 ### Analysis Framework
 The analysis scripts in `functions/` extend PowerGAMA with:
 - Database query functions for result extraction
