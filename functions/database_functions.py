@@ -1,5 +1,10 @@
 """
-This file contains functions that are used to interact with the database.
+Database interaction functions for PowerGAMA result analysis.
+
+This module extends PowerGAMA (https://github.com/powergama/powergama) with
+additional database query functions for extracting and analyzing simulation results.
+
+Source: NordicNuclearAnalysis (https://github.com/Zynecut/NordicNuclearAnalysis)
 """
 import csv
 import numpy as np

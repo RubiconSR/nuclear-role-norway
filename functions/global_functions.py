@@ -1,3 +1,11 @@
+"""
+Global utility functions for PowerGAMA simulations.
+
+This module extends PowerGAMA (https://github.com/powergama/powergama) with
+utility functions for data processing, grid setup, and result extraction.
+
+Source: NordicNuclearAnalysis (https://github.com/Zynecut/NordicNuclearAnalysis)
+"""
 # Imports
 import powergama
 import pathlib

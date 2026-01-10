@@ -1,3 +1,11 @@
+"""
+Plotting functions for PowerGAMA result visualization.
+
+This module extends PowerGAMA (https://github.com/powergama/powergama) with
+additional plotting functions for energy mix, prices, and capacity analysis.
+
+Source: NordicNuclearAnalysis (https://github.com/Zynecut/NordicNuclearAnalysis)
+"""
 from functions.global_functions import *
 import seaborn as sns
 

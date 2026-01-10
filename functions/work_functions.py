@@ -1,3 +1,11 @@
+"""
+Work functions for PowerGAMA scenario setup and analysis.
+
+This module extends PowerGAMA (https://github.com/powergama/powergama) with
+functions for scenario configuration and simulation workflow.
+
+Source: NordicNuclearAnalysis (https://github.com/Zynecut/NordicNuclearAnalysis)
+"""
 from fontTools.cffLib import topDictOperators
 
 from functions.plot_functions import *
