@@ -72,10 +72,20 @@ For each demand case, four nuclear capacity scenarios are simulated:
 
 ```
 nuclear-role-norway/
-├── CASE_2035/              # Input configurations from base scenarios
-│   ├── scenario_BL/        # Baseline scenario setup
-│   ├── scenario_FDT/       # FDT scenario setup
-│   └── scenario_VDT/       # VDT scenario setup
+├── CASE_2035/              # Base input data from NordicNuclearAnalysis
+│   ├── scenario_BL/        # Baseline configuration
+│   ├── scenario_FDT/       # FDT configuration
+│   └── scenario_VDT/       # VDT configuration
+├── CASE_2050_MD/           # 2050 Medium Demand scenarios (208 TWh)
+│   ├── scenario_BL/        # Baseline (no nuclear)
+│   ├── scenario_SMR1/      # 1.5 GW SMR
+│   ├── scenario_SMR3/      # 4.5 GW SMR
+│   └── scenario_SMR6/      # 9.0 GW SMR
+├── CASE_2050_IC/           # 2050 Increased Consumption scenarios (230 TWh)
+│   ├── scenario_BL/        # Baseline (no nuclear)
+│   ├── scenario_SMR1/      # 1.5 GW SMR
+│   ├── scenario_SMR3/      # 4.5 GW SMR
+│   └── scenario_SMR6/      # 9.0 GW SMR
 ├── functions/              # Analysis and plotting functions
 │   ├── database_functions.py   # Database queries
 │   ├── plot_functions.py       # Visualization
