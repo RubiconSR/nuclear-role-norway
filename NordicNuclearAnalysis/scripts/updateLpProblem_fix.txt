@@ -1,0 +1,305 @@
+
+
+# Steg 1
+
+week_MSO = {'FI_10':16,
+            'FI_12':36,
+            'SE3_3':20,
+            'SE3_6':24,
+            'GB':32,
+            'NL':28
+            }
+
+res = solve_lp(data, SQL_FILE, loss_method, replace=True, nuclear_availability=0.7, week_MSO)
+
+-----------------------------------------------------------------------------------------------
+# Steg 2 bytt ut denne i solve_lp i global_functions.py
+
+def solve_lp(data,
+             sql_file,
+             loss_method,
+             replace,
+             nuclear_availability=None,
+             week_MSO=None):
+    """
+    Solves a linear programming problem using the given grid data and stores the results in a SQL file.
+
+    Parameters:
+        data (powergama.GridData): The grid data to be used for the linear programming problem.
+        sql_file (str): The path to the SQL file where the results will be stored.
+
+    Returns:
+        powergama.Results: The results of the linear programming problem.
+    """
+
+    lp = powergama.LpProblem(grid=data, lossmethod=loss_method)  # lossmethod; 0=no losses, 1=linearised losses, 2=added as load
+    # if replace = False, bruker kun sql_file som input
+    res = powergama.Results(data, sql_file, replace=replace)
+    if replace:
+        start_time = time.time()
+        lp.solve(res, solver="glpk", nuclear_availability=nuclear_availability, week_MSO=week_MSO)
+        end_time = time.time()
+        print("\nSimulation time = {:.2f} seconds".format(end_time - start_time))
+        print("\nSimulation time = {:.2f} minutes".format((end_time - start_time)/60))
+    return res
+
+
+
+
+-----------------------------------------------------------------------------------------------
+# Steg 3 - bytt ut def solve med denne i LpProblemPyomo.py
+def solve(
+        self,
+        results,
+        solver="cbc",
+        solver_path=None,
+        warmstart=False,
+        savefiles=False,
+        aclossmultiplier=1,
+        dclossmultiplier=1,
+        solve_args=None,
+        nuclear_availability=None,
+        week_MSO=None,
+    ):
+
+
+-----------------------------------------------------------------------------------------------
+# Steg 4 - legg inn nuclear_availability i _updatedLpProblem i LpProblemPyomo.py
+# linje 863
+self._updateLpProblem(timestep, nuclear_availability, week_MSO)
+
+-----------------------------------------------------------------------------------------------
+# Steg 5 Bytt ut hele _updateLpProblem i LpProblemPyomo.py
+
+def _updateLpProblem(self, timestep, nuclear_availability: float = None, week_MSO=None):
+    """
+    Function that updates LP problem for a given timestep, due to changed
+    power demand, power inflow and marginal generator costs
+    """
+    # Keep track of day, week, month, year
+    self.day = (timestep // 24) + 1  # Calculate the cumulative day count (starting at 1)
+    self.year = ((self.day - 1) // 365) + 1  # Determine the year (assuming 365 days per year)
+    day_of_year = ((self.day - 1) % 365) + 1  # Determine the day of the current year (1 through 365)
+    self.week = ((day_of_year - 1) // 7) + 1  # Calculate the week of the current year
+    if self.week > 52:  # Map self.week to a storage profile week between 1 and 52
+        profile_week = ((self.week - 1) % 52) + 1
+    else:
+        profile_week = self.week
+    # Determine the month (approximate based on day_of_year)
+    month = (day_of_year // 30) + 1  # Approximate month (not perfect, but sufficient for this purpose)
+
+    self.nuclear_availability = {}
+
+
+
+
+
+    # 1. Generator output limits:
+    #    -> power output constraints
+    P_storage = self._storage / self.timeDelta
+    P_max = self._grid.generator["pmax"]
+    P_min = self._grid.generator["pmin"]
+    for i in self.s_gen:
+        inflow_factor = self._grid.generator.loc[i, "inflow_fac"]
+        capacity = self._grid.generator.loc[i, "pmax"]
+        inflow_profile = self._grid.generator.loc[i, "inflow_ref"]
+        P_inflow = capacity * inflow_factor * self._grid.profiles.loc[timestep, inflow_profile]
+
+        # Apply availability reduction for nuclear power plants in July
+        if nuclear_availability is not None:
+            start_week = week_MSO.get(self._grid.generator.loc[i, 'node'])
+
+            if (self._grid.generator.loc[i, 'type'] == 'nuclear' and
+                start_week is not None and
+                start_week <= profile_week < start_week + 3):
+
+                P_inflow *= nuclear_availability  # Scale inflow based on availability
+
+
+
+
+        if i not in self._idx_generatorsWithStorage:
+            """
+            Don't let P_max limit the output (e.g. solar PV)
+            This won't affect fuel based generators with zero storage,
+            since these should have inflow=p_max in any case
+            """
+            if P_min[i] > 0:
+                self.p_gen_pmin[i] = min(P_inflow, P_min[i])
+            self.p_gen_pmax[i] = P_inflow
+        else:
+            # generator has storage
+            if P_min[i] > 0:
+                self.p_gen_pmin[i] = min(max(0, P_inflow + P_storage[i]), P_min[i])
+            self.p_gen_pmax[i] = min(max(0, P_inflow + P_storage[i]), P_max[i])
+
+    # TODO: re-create constraint - if persistent solver
+
+    # 2. Update demand
+    #    -> power balance constraint
+    for i in self.s_load:
+        average = self._grid.consumer.loc[i, "demand_avg"] * (1 - self._grid.consumer.loc[i, "flex_fraction"])
+        profile_ref = self._grid.consumer.loc[i, "demand_ref"]
+        demand_now = self._grid.profiles.loc[timestep, profile_ref] * average
+        self.p_demand[i] = demand_now
+
+    # 3. Cost parameters
+    #    -> update objective function
+
+
+    # 3a. generators with storage (storage value)
+    for i in self._idx_generatorsWithStorage:
+        this_type_filling = self._grid.generator.loc[i, "storval_filling_ref"]
+        this_type_time = self._grid.generator.loc[i, "storval_time_ref"]
+        storagecapacity = self._grid.generator.loc[i, "storage_cap"]
+        fillinglevel = self._storage[i] / storagecapacity
+        filling_col = int(round(fillinglevel * 100))
+        if this_type_filling == 'hydro':
+            if 'NO1' in self._grid.generator.loc[i, 'node']:
+                week = f"NO1 week {profile_week}"
+                storagevalue = (
+                        self._grid.generator.loc[i, "storage_price"]
+                        * self._grid.storagevalue_filling.loc[filling_col, week]
+                        * self._grid.storagevalue_time.loc[timestep, this_type_time]
+                )
+            elif 'NO2' in self._grid.generator.loc[i, 'node']:
+                week = f"NO2 week {profile_week}"
+                storagevalue = (
+                        self._grid.generator.loc[i, "storage_price"]
+                        * self._grid.storagevalue_filling.loc[filling_col, week]
+                        * self._grid.storagevalue_time.loc[timestep, this_type_time]
+                )
+            elif 'NO3' in self._grid.generator.loc[i, 'node']:
+                week = f"NO3 week {profile_week}"
+                storagevalue = (
+                        self._grid.generator.loc[i, "storage_price"]
+                        * self._grid.storagevalue_filling.loc[filling_col, week]
+                        * self._grid.storagevalue_time.loc[timestep, this_type_time]
+                )
+            elif 'NO4' in self._grid.generator.loc[i, 'node']:
+                week = f"NO4 week {profile_week}"
+                storagevalue = (
+                        self._grid.generator.loc[i, "storage_price"]
+                        * self._grid.storagevalue_filling.loc[filling_col, week]
+                        * self._grid.storagevalue_time.loc[timestep, this_type_time]
+                )
+            elif 'NO5' in self._grid.generator.loc[i, 'node']:
+                week = f"NO5 week {profile_week}"
+                storagevalue = (
+                        self._grid.generator.loc[i, "storage_price"]
+                        * self._grid.storagevalue_filling.loc[filling_col, week]
+                        * self._grid.storagevalue_time.loc[timestep, this_type_time]
+                )
+            else:
+                week = f"NO1 week {profile_week}"
+                storagevalue = (
+                        self._grid.generator.loc[i, "storage_price"]
+                        * self._grid.storagevalue_filling.loc[filling_col, week]
+                        * self._grid.storagevalue_time.loc[timestep, this_type_time]
+                )
+        else:
+            storagevalue = (
+                    self._grid.generator.loc[i, "storage_price"]
+                    * self._grid.storagevalue_filling.loc[filling_col, this_type_filling]
+                    * self._grid.storagevalue_time.loc[timestep, this_type_time]
+            )
+
+        self.p_gen_cost[i] = storagevalue
+        if i in self._idx_generatorsWithPumping:
+            deadband = self._grid.generator.pump_deadband[i]
+            self.p_genpump_cost[i] = storagevalue - deadband
+
+    # # 3a. generators with storage (storage value)
+    # for i in self._idx_generatorsWithStorage:
+    #     this_type_filling = self._grid.generator.loc[i, "storval_filling_ref"]
+    #     this_type_time = self._grid.generator.loc[i, "storval_time_ref"]
+    #     storagecapacity = self._grid.generator.loc[i, "storage_cap"]
+    #     fillinglevel = self._storage[i] / storagecapacity
+    #     filling_col = int(round(fillinglevel * 100))
+    #     storagevalue = (
+    #         self._grid.generator.loc[i, "storage_price"]
+    #         * self._grid.storagevalue_filling.loc[filling_col, this_type_filling]
+    #         * self._grid.storagevalue_time.loc[timestep, this_type_time]
+    #     )
+    #     self.p_gen_cost[i] = storagevalue
+    #     if i in self._idx_generatorsWithPumping:
+    #         deadband = self._grid.generator.pump_deadband[i]
+    #         self.p_genpump_cost[i] = storagevalue - deadband
+
+    # 3b. flexible load (storage value)
+    for i in self._idx_consumersWithFlexLoad:
+        this_type_filling = self._grid.consumer.loc[i, "flex_storval_filling"]
+        this_type_time = self._grid.consumer.loc[i, "flex_storval_time"]
+        # Compute storage capacity in Mwh (from value in hours)
+        storagecapacity_flexload = (
+            self._grid.consumer.loc[i, "flex_storage"]  # h
+            * self._grid.consumer.loc[i, "flex_fraction"]
+            * self._grid.consumer.loc[i, "demand_avg"]
+        )  # MW
+        fillinglevel = self._storage_flexload[i] / storagecapacity_flexload
+        filling_col = int(round(fillinglevel * 100))
+        if fillinglevel > 1:
+            storagevalue_flex = -const.flexload_outside_cost
+        elif fillinglevel < 0:
+            storagevalue_flex = const.flexload_outside_cost
+        else:
+            storagevalue_flex = (
+                self._grid.consumer.flex_basevalue[i]
+                * self._grid.storagevalue_filling.loc[filling_col, this_type_filling]
+                * self._grid.storagevalue_time.loc[timestep, this_type_time]
+            )
+        self.p_loadflex_cost[i] = storagevalue_flex
+
+    return
+
+
+
+    ## EINAR 17.03.2025
+
+            # 3a. generators with storage (storage value)
+        for i in self._idx_generatorsWithStorage:
+            this_type_filling = self._grid.generator.loc[i, "storval_filling_ref"]
+            this_type_time = self._grid.generator.loc[i, "storval_time_ref"]
+            storagecapacity = self._grid.generator.loc[i, "storage_cap"]
+            fillinglevel = self._storage[i] / storagecapacity
+            filling_col = int(round(fillinglevel * 100))
+
+            # Dynamisk regiondeteksjon (NO1-NO5)
+            node = self._grid.generator.loc[i, 'node']
+            region = next((f"NO{n}" for n in range(1, 6) if f"NO{n}" in node), "NO1")
+
+            # Beregn uketall og reset etter uke 52
+            profile_week = ((self.week - 1) % 52) + 1
+            week_column = f"{region} week {profile_week}"
+
+            # Sjekk om kolonnen finnes i storagevalue_filling
+            if week_column not in self._grid.storagevalue_filling.columns:
+                raise ValueError(f"Week column '{week_column}' not found in storagevalue_filling.")
+
+            # Sjekk om filling_col og timestep finnes i DataFrame
+            if filling_col not in self._grid.storagevalue_filling.index:
+                raise ValueError(f"Filling column '{filling_col}' not found in storagevalue_filling.")
+            if timestep not in self._grid.storagevalue_time.index:
+                raise ValueError(f"Timestep '{timestep}' not found in storagevalue_time.")
+            if this_type_time not in self._grid.storagevalue_time.columns:
+                raise ValueError(f"Storage time reference '{this_type_time}' not found in storagevalue_time.")
+
+            # Beregn storage value
+            if this_type_filling == 'hydro':
+                storagevalue = (
+                        self._grid.generator.loc[i, "storage_price"]
+                        * self._grid.storagevalue_filling.loc[filling_col, week_column]
+                        * self._grid.storagevalue_time.loc[timestep, this_type_time]
+                )
+            else:
+                storagevalue = (
+                        self._grid.generator.loc[i, "storage_price"]
+                        * self._grid.storagevalue_filling.loc[filling_col, this_type_filling]
+                        * self._grid.storagevalue_time.loc[timestep, this_type_time]
+                )
+
+            # Oppdater generatorverdier
+            self.p_gen_cost[i] = storagevalue
+            if i in self._idx_generatorsWithPumping:
+                deadband = self._grid.generator.pump_deadband[i]
+                self.p_genpump_cost[i] = storagevalue - deadband

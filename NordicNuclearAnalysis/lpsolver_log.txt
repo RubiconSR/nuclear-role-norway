@@ -1,0 +1,31 @@
+Solver command line: ['/opt/homebrew/bin/glpsol', '--write', '/var/folders/w_/t78nzgbn65s0fq6y5g0xt46r0000gn/T/tmpsjeg_z7u.glpk.raw', '--wglp', '/var/folders/w_/t78nzgbn65s0fq6y5g0xt46r0000gn/T/tmprmlywtxo.glpk.glp', '--cpxlp', '/var/folders/w_/t78nzgbn65s0fq6y5g0xt46r0000gn/T/tmpwbiggukd.pyomo.lp']
+
+GLPSOL--GLPK LP/MIP Solver 5.0
+Parameter(s) specified in the command line:
+ --write /var/folders/w_/t78nzgbn65s0fq6y5g0xt46r0000gn/T/tmpsjeg_z7u.glpk.raw
+ --wglp /var/folders/w_/t78nzgbn65s0fq6y5g0xt46r0000gn/T/tmprmlywtxo.glpk.glp
+ --cpxlp /var/folders/w_/t78nzgbn65s0fq6y5g0xt46r0000gn/T/tmpwbiggukd.pyomo.lp
+Reading problem data from '/var/folders/w_/t78nzgbn65s0fq6y5g0xt46r0000gn/T/tmpwbiggukd.pyomo.lp'...
+810 rows, 642 columns, 1683 non-zeros
+5205 lines were read
+Writing problem data to '/var/folders/w_/t78nzgbn65s0fq6y5g0xt46r0000gn/T/tmprmlywtxo.glpk.glp'...
+4463 lines were written
+GLPK Simplex Optimizer 5.0
+810 rows, 642 columns, 1683 non-zeros
+Preprocessing...
+159 rows, 335 columns, 723 non-zeros
+Scaling...
+ A: min|aij| =  1.000e-02  max|aij| =  6.053e+02  ratio =  6.053e+04
+GM: min|aij| =  1.305e-01  max|aij| =  7.663e+00  ratio =  5.873e+01
+EQ: min|aij| =  1.703e-02  max|aij| =  1.000e+00  ratio =  5.873e+01
+Constructing initial basis...
+Size of triangular part is 159
+      0: obj =   4.077009551e+06 inf =   1.002e+03 (57)
+    152: obj =   2.827157081e+07 inf =   0.000e+00 (0)
+*   396: obj =   1.047282014e+07 inf =   0.000e+00 (0) 1
+OPTIMAL LP SOLUTION FOUND
+Time used:   0.0 secs
+Memory used: 0.7 Mb (782808 bytes)
+Writing basic solution to '/var/folders/w_/t78nzgbn65s0fq6y5g0xt46r0000gn/T/tmpsjeg_z7u.glpk.raw'...
+1461 lines were written
+
